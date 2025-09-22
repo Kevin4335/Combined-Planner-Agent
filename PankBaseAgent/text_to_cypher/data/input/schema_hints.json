@@ -1,0 +1,11 @@
+{
+  "relationships": {
+    "REGULATES_GrG": "Gene regulates Gene (BioGrid interactions)",
+    "OCR_ACTIVITY_OaC": "Open Chromatin Region activity in Cell Type",
+    "ANNOTATES_GaGO": "Gene annotated with Gene Ontology term",
+    "EFFECTOR_GeD": "Gene is an Effector Gene for Disease (T1D evidence)",
+    "DIFF_EXP_GdC": "Gene shows Differential Expression in Cell Type",
+    "EXPRESSION_GeC": "Gene expression level in Cell Type",
+    "EQTL_QsG": "SNP (variant) associated with Gene expression (fine-mapped eQTL)"
+  }
+}

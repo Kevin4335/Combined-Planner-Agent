@@ -15,6 +15,16 @@
    ```
    Open .env in your editor and fill in the missing values (e.g., API keys).  
 
+3. Add config.py
+   ```
+   touch config.py
+   ```
+   Next, add the following lines:
+   ```
+   API_KEY='<Your-API-Key>'
+   OPENAI_API_KEY=API_KEY
+   ```
+
 ## Usage
 
 Run the assistant with:

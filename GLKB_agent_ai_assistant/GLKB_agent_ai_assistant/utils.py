@@ -16,7 +16,8 @@ GLKB_CONNECTION_URL = "bolt://141.213.137.207:7687"
 GLKB_USERNAME = 'neo4j'
 GLKB_PASSWORD = 'password'
 
-embedding_function = SentenceTransformerEmbeddings(model_name='Alibaba-NLP/gte-large-en-v1.5', model_kwargs={'trust_remote_code': True}) # device_map="auto"
+embedding_function = SentenceTransformerEmbeddings(model_name='Alibaba-NLP/gte-large-en-v1.5', mmodel_kwargs={'trust_remote_code': True,
+                  'device':'cpu'}) # device_map="auto"
 retrieval_query = """
                 RETURN node {.pubmedid, .title, .abstract} AS text, score, {} AS metadata
                 """

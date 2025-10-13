@@ -69,7 +69,8 @@ def check_json(response: str) -> Tuple[bool, dict]:
         assert ('draft' in response)
         assert (response['to'] in ('system', 'user'))
         if (response['to'] == 'user'):
-            assert (type(response['text']) == str)
+            # assert (type(response['text']) == dict)
+            pass
         else:
             assert (type(response['functions'] == list))
             assert (len(response['functions']) > 0)
@@ -79,7 +80,7 @@ def check_json(response: str) -> Tuple[bool, dict]:
                 assert (type(function['name']) == str)
                 assert ('input' in function)
                 assert (type(function['input']) == str)
-                assert (function['name'] in ('pankbase_chat_one_round', 'glkb_chat_one_round')) #Function Names here
+                assert (function['name'] in ('pankbase_chat_one_round', 'glkb_chat_one_round', 'template_chat_one_round')) #Function Names here
         return (True, response)
     except:
         err_msg = traceback.format_exc()

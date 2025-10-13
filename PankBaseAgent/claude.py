@@ -67,7 +67,8 @@ def check_json(response: str) -> Tuple[bool, dict]:
         assert ('draft' in response)
         assert (response['to'] in ('system', 'user'))
         if (response['to'] == 'user'):
-            assert (type(response['text']) == str)
+            # assert (type(response['text']) == dict)
+            pass
         else:
             assert (type(response['functions'] == list))
             assert (len(response['functions']) > 0)

@@ -14,7 +14,8 @@ import os
 
 embedding_function = HuggingFaceEmbeddings(
     model_name='Alibaba-NLP/gte-large-en-v1.5',
-    model_kwargs={'trust_remote_code': True}
+    model_kwargs={'trust_remote_code': True,
+                  'device':'cpu'}
 )  # device_map="auto"
 
 
@@ -147,7 +148,11 @@ def _pankbase_api_query(input: str, q: Queue) -> None:
             
         try:
             result = response.json()
-            q.put((True, json.dumps(result, ensure_ascii=False)))
+            combined = {
+                "cypher_query": cleaned_cypher,
+                "api_result": result
+            }
+            q.put((True, json.dumps(combined, ensure_ascii=False)))
         except json.JSONDecodeError as e:
             q.put((False, f"Invalid JSON response from API: {response.text}"))
     except Exception as e:

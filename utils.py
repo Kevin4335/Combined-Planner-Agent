@@ -11,10 +11,12 @@ from langchain_community.vectorstores import Neo4jVector
 from langchain_huggingface import HuggingFaceEmbeddings
 from neo4j import GraphDatabase
 import os 
+import re
+
 
 embedding_function = HuggingFaceEmbeddings(
     model_name='Alibaba-NLP/gte-large-en-v1.5',
-    model_kwargs={'trust_remote_code': True}
+    model_kwargs={'trust_remote_code': True},
 )  # device_map="auto"
 
 
@@ -98,6 +100,45 @@ if __name__ == "__main__":
     # Test Pankbase API functionality
     print(0)
 
+def template_chat_one_round(input: str, index: int) -> str:
+	q = Queue()
+	start_new_thread(_Template_Tool_Call_one_round, (input, q))
+	start = time.time()
+	while (time.time() - start < 100):
+		time.sleep(0.2)
+		if (q.qsize() == 1):
+			break
+	size = q.qsize()
+	result = f'{index}. TemplateToolAgent chat_one_round: {str([input])[1:-1]}\n'
+	if (size == 0):
+		result += 'Status: timeout\n'
+		result += 'Error: Cannot get response from TemplateToolAgent in 100 seconds\n\n'
+		return result
+	success, res = q.get(block=False)
+	if (success == False):
+		result += 'Status: error\n'
+		result += f'Error: {str([res])[1:-1]}\n\n'
+		return result
+	result += 'Status: success\n'
+	res = res[:15000]
+	result += f'Result: {res}\n\n'
+	return result
+
+def _Template_Tool_Call_one_round(input: str, q: Queue) -> str:
+	try:
+		sys.path.append('TemplateToolAgent')
+		from TemplateToolAgent.ai_assistant import chat_one_round_ToolCall as tool_chat
+		_, text = tool_chat([], input)
+		q.put((True, text))
+	except Exception:
+		err_msg = traceback.format_exc()
+		print(err_msg, file=sys.stderr)
+		if (len(err_msg) > 2000):
+			first = err_msg[:1000]
+			second = err_msg[-1000:]
+			err_msg = first + '  ... Middle part hidden due to length limit ...  ' + second
+		q.put((False, err_msg))
+
 def pankbase_chat_one_round(input: str, index: int) -> str:
 	q = Queue()
 	start_new_thread(_pankbase_chat_one_round, (input, q))
@@ -112,22 +153,43 @@ def pankbase_chat_one_round(input: str, index: int) -> str:
 		result += 'Status: timeout\n'
 		result += 'Error: Cannot get response from PankBaseAgent in 100 seconds\n\n'
 		return result
-	success, res = q.get(block=False)
+	success, res, cypher_query = q.get(block=False)
 	if (success == False):
 		result += 'Status: error\n'
 		result += f'Error: {str([res])[1:-1]}\n\n'
 		return result
 	result += 'Status: success\n'
 	res = res[:15000]
-	result += f'Result: {res}\n\n'
+	result += f'''
+	{{
+		"template_matching": "agent_answer",
+		"cypher": "{cypher_query}",
+		"summary": "{res}"
+	}}
+	'''
 	return result
 
 def _pankbase_chat_one_round(input: str, q: Queue) -> None:
 	try:
 		sys.path.append('PankBaseAgent')
 		from PankBaseAgent.ai_assistant import chat_one_round_pankbase as pankbase_chat
-		_, text = pankbase_chat([], input)
-		q.put((True, text))
+		full , text = pankbase_chat([], input)
+		
+		match = re.search(
+			r'"cypher_query".*?(?="api_result")',
+			full[2]['content'],
+			re.DOTALL
+		)
+
+		if match:
+			cypher_query = match.group(0).strip()
+			print(cypher_query)
+		else:
+			print("nomatch")
+			cypher_query = ''
+
+		text = f"\n\n{text}"
+		q.put((True, text, cypher_query))
 	except Exception:
 		err_msg = traceback.format_exc()
 		print(err_msg, file=sys.stderr)
@@ -135,7 +197,7 @@ def _pankbase_chat_one_round(input: str, q: Queue) -> None:
 			first = err_msg[:1000]
 			second = err_msg[-1000:]
 			err_msg = first + '  ... Middle part hidden due to length limit ...  ' + second
-		q.put((False, err_msg))
+		q.put((False, err_msg, ''))
 
 def glkb_chat_one_round(input: str, index: int) -> str:
 	q = Queue()

@@ -19,14 +19,116 @@ load_dotenv()
 # Single shared history store for all providers
 _SHARED_HISTORY = ChatMessageHistory()
 
+# SYSTEM_RULES = (
+#     "You are a Cypher-generating assistant. Follow these rules:\n"
+#     "1. Use *only* the node labels, relationship types and property names that appear in the JSON schema.\n"
+#     "2. If the user is revising a previous Cypher draft, update that draft; otherwise, generate a fresh query.\n"
+#     "3. Respond with **Cypher only** – no commentary or explanation.\n"
+#     "4. Return the minimal Cypher query that directly satisfies the request. Do not add relationships or extra OPTIONAL MATCHes unless explicitly asked for.\n"
+#     "5. When the user mentions a label/relationship/property absent from the schema, first map it to the closest existing element (exact synonym, substring, or highest-similarity fuzzy match). Ask for clarification only if multiple matches are equally plausible, offering up to three suggestions.\n"
+#     "6. Your cypher query must return a graph as node- and edge- lists, such as with the example below"
+#     """
+#     MATCH(n1)-[r1]->(n2)  #any query you want, n1… n99, r1…r99
+#     WITH   collect(DISTINCT n1)+ collect(DISTINCT n2)AS nodes,
+#     collect(DISTINCT r1)AS edges
+#     RETURN nodes, edges;
+#     """
+
+# )
 SYSTEM_RULES = (
-    "You are a Cypher-generating assistant. Follow these rules:\n"
-    "1. Use *only* the node labels, relationship types and property names that appear in the JSON schema.\n"
-    "2. If the user is revising a previous Cypher draft, update that draft; otherwise, generate a fresh query.\n"
-    "3. Respond with **Cypher only** – no commentary or explanation.\n"
-    "4. Return the minimal Cypher query that directly satisfies the request. Do not add relationships or extra OPTIONAL MATCHes unless explicitly asked for.\n"
-    "5. When the user mentions a label/relationship/property absent from the schema, first map it to the closest existing element (exact synonym, substring, or highest-similarity fuzzy match). Ask for clarification only if multiple matches are equally plausible, offering up to three suggestions.\n"
+# SYSTEM_RULES = (
+    """
+You are a Cypher-generating assistant for a biomedical knowledge graph. Follow these rules strictly:
+
+**Core Rules:**
+1. Use ONLY the node labels, relationship types, and property names from the provided JSON schema.
+2. If the user is revising a previous Cypher query, update that draft; otherwise, generate a fresh query.
+3. Respond with **Cypher only** – no commentary, explanation, or markdown formatting.
+4. Return the minimal Cypher query that directly satisfies the request. Do not add relationships or OPTIONAL MATCHes unless explicitly asked.
+5. When the user mentions a label/relationship/property absent from the schema, map it to the closest existing element (exact synonym, substring, or fuzzy match). Ask for clarification only if multiple matches are equally plausible, offering 2-3 suggestions.
+
+**MANDATORY OUTPUT FORMAT:**
+6. EVERY query must return results as node and edge lists using this exact pattern:
+   - For queries WITH relationships:
+     MATCH (n1)-[r1]->(n2)
+     WHERE ...  // your filters here
+     WITH collect(DISTINCT n1) + collect(DISTINCT n2) AS nodes,
+          collect(DISTINCT r1) AS edges
+     RETURN nodes, edges;
+   
+   - For queries WITHOUT relationships (node-only):
+     MATCH (n1:Label)
+     WHERE ...  // your filters here
+     WITH collect(DISTINCT n1) AS nodes,
+          [] AS edges
+     RETURN nodes, edges;
+
+**Few-Shot Examples:**
+
+Example 1 - Basic relationship query:
+User: "Show genes that regulate other genes"
+MATCH (g1:gene)-[r:regulation]->(g2:gene)
+WITH collect(DISTINCT g1) + collect(DISTINCT g2) AS nodes,
+     collect(DISTINCT r) AS edges
+RETURN nodes, edges;
+
+Example 2 - Filtered relationship query:
+User: "Find upregulated genes in beta cells with log2 fold change > 2"
+MATCH (g:gene)-[r:Differential_Expression]->(ct:cell_type)
+WHERE ct.name = 'beta cell' AND r.UpOrDownRegulation = 'up' AND r.Log2FoldChange > 2
+WITH collect(DISTINCT g) + collect(DISTINCT ct) AS nodes,
+     collect(DISTINCT r) AS edges
+RETURN nodes, edges;
+
+Example 3 - Multi-hop query:
+User: "Show SNPs, the genes they affect, and cell types where those genes are expressed"
+MATCH (s:snp)-[r1:fine_mapped_eQTL]->(g:gene)-[r2:expression_level]->(ct:cell_type)
+WITH collect(DISTINCT s) + collect(DISTINCT g) + collect(DISTINCT ct) AS nodes,
+     collect(DISTINCT r1) + collect(DISTINCT r2) AS edges
+RETURN nodes, edges;
+
+Example 4 - Node-only query:
+User: "Find the CFTR gene"
+MATCH (g:gene {{name: "CFTR"}})
+WITH collect(DISTINCT g) AS nodes,
+     [] AS edges
+RETURN nodes, edges;
+
+Example 5 - Node-only with filter:
+User: "Get all genes on chromosome 6"
+MATCH (g:gene)
+WHERE g.chr = 'chr6'
+WITH collect(DISTINCT g) AS nodes,
+     [] AS edges
+RETURN nodes, edges;
+
+Example 6 - Multiple match clauses:
+User: "Find genes that regulate other genes and are differentially expressed"
+MATCH (g1:gene)-[r1:regulation]->(g2:gene)
+MATCH (g1)-[r2:Differential_Expression]->(ct:cell_type)
+WITH collect(DISTINCT g1) + collect(DISTINCT g2) + collect(DISTINCT ct) AS nodes,
+     collect(DISTINCT r1) + collect(DISTINCT r2) AS edges
+RETURN nodes, edges;
+
+Example 7 - Complex filtering:
+User: "SNPs linked to genes that are effector genes for diabetes"
+MATCH (s:snp)-[r1:fine_mapped_eQTL]->(g:gene)-[r2:effector_gene]->(o:ontology)
+WHERE o.name CONTAINS 'diabetes'
+WITH collect(DISTINCT s) + collect(DISTINCT g) + collect(DISTINCT o) AS nodes,
+     collect(DISTINCT r1) + collect(DISTINCT r2) AS edges
+RETURN nodes, edges;
+
+**Critical Reminders:**
+- ALL node variables from MATCH clauses must be in the nodes collection (use + to concatenate)
+- ALL relationship variables from MATCH clauses must be in the edges collection
+- ALWAYS use DISTINCT in collect() statements
+- Apply WHERE filters BEFORE the WITH clause
+- The final RETURN must be exactly: RETURN nodes, edges;
+- For node-only queries, use [] AS edges (empty list)
+- Never return anything other than nodes and edges
+"""
 )
+
 
 def make_llm(provider: str = "openai"):
     """Return a Chat instance for the specified provider."""
@@ -85,9 +187,18 @@ class Text2CypherAgent:
             history_messages_key="history",
         )
 
+    # def respond(self, user_text: str) -> str:
+    #     result = self.chain.invoke(
+    #         {"user_input": user_text},
+    #         config={"configurable": {"session_id": self.session_id}}
+    #     )
+    #     return result.content.strip().strip("` ")
     def respond(self, user_text: str) -> str:
         result = self.chain.invoke(
-            {"user_input": user_text},
+            {
+                "user_input": user_text,
+                "name": "PankBaseAgent"  # or whatever name your template expects
+            },
             config={"configurable": {"session_id": self.session_id}}
         )
         return result.content.strip().strip("` ")

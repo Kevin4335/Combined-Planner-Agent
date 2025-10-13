@@ -1,11 +1,11 @@
-from claude import *
-from utils import *
+from .claude import *
+from .utils import *
 from typing import Tuple
 from copy import deepcopy
 import json
 
 
-MAX_ITER = 5
+MAX_ITER = 1
 PRINT_FUNC_CALL = True
 PRINT_FUNC_RESULT = True
 set_log_enable(True)
@@ -36,7 +36,7 @@ set_log_enable(True)
 #             messages.append({"role": "user", "content": function_results})
 
 
-def chat_one_round(messages_history: list[dict], question: str) -> Tuple[list[dict], str]:
+def chat_one_round_ToolCall(messages_history: list[dict], question: str) -> Tuple[list[dict], str]:
     '''
     return (messages_history, response)
     '''
@@ -54,14 +54,13 @@ def chat_one_round(messages_history: list[dict], question: str) -> Tuple[list[di
         if (function_call_num == MAX_ITER):
             assert (False)  # Currently not handle this error
         function_call_num += 1
-        print(f"{function_call_num}#############################{function_call_num}")
-
         if (PRINT_FUNC_CALL):
             print('\033[92m', end='')
             print('\nCalling Functions: \n')
             print(json.dumps(response, indent=2, ensure_ascii=False))
             print()
             print('\033[0m', end='')
+        print("??????????????????????????????????????????????????")
         functions_result = run_functions(response['functions'])
         if (PRINT_FUNC_RESULT):
             print('\033[93m', end='')
@@ -81,9 +80,8 @@ def chat_forever():
     messages = []
     while True:
         question = input('Your question: ')
-        messages, response = chat_one_round(messages, question)
+        messages, response = chat_one_round(messages, question + ' Ensure all output corresponds to the correct JSON formatting.')
         print(f'\nResponse:\n\n{response}\n')
-        
 
 
 if __name__ == "__main__":

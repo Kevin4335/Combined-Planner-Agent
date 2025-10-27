@@ -130,12 +130,12 @@ You can call multiple functions at a time, these functions will run in parallel.
 
 When a function calling is finished, you will see its result. You can decide what to do next (return to user, or do another function calling) based on this result.
 
-Currently MAX_ITER is set to 5.
+Currently MAX_ITER is set to 2.
 
 Here is the pseudo code:
 
 ```python
-MAX_ITER = 5
+MAX_ITER = 2
 messages = []
 model = <the_ai_assistant>  # This is you
 

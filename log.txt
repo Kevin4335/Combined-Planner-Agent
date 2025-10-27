@@ -1,0 +1,12 @@
+Find diseases associated with the gene CFTR.
+MATCH (g:gene {name: "CFTR"})-[r:effector_gene]->(o:ontology) WITH collect(DISTINCT g) + collect(DISTINCT o) AS nodes, collect(DISTINCT r) AS edges RETURN nodes, edges;
+##########################
+Provide detailed information about the gene CFTR, including its properties.
+MATCH (g:gene {name: "CFTR"}) WITH collect(DISTINCT g) AS nodes, [] AS edges RETURN nodes, edges;
+##########################
+Find proteins encoded by the gene CFTR.
+MATCH (g:gene {name: "CFTR"}) WITH collect(DISTINCT g) AS nodes, [] AS edges RETURN nodes, edges;
+##########################
+Find pathways in which the gene CFTR participates.
+MATCH (g:gene)-[r:function_annotation]->(go:gene_ontology) WHERE g.name = "CFTR" WITH collect(DISTINCT g) + collect(DISTINCT go) AS nodes, collect(DISTINCT r) AS edges RETURN nodes, edges;
+##########################

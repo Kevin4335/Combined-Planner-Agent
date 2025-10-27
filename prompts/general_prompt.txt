@@ -28,6 +28,12 @@ Ensure the output strictly follows JSON syntax.
    - It produces fixed-format triples like `snp - QTL - gene@ENSG00000001626`.  
    - It cannot interpret free-text biological names — you must resolve identifiers (e.g., Ensembl IDs or rsIDs) **before calling** this agent.
 
+4. **FormatAgent**  
+   - An intelligent cypher query formatter and relevance analyzer that automatically processes all cypher queries generated during a session.  
+   - It analyzes the relevance of each cypher query to the original human question and orders them by relevance.  
+   - This agent is called automatically after all other agents complete their work, so you do not need to explicitly call it.  
+   - It provides additional analysis and formatting of the cypher queries used in your response.
+
 ---
 
 ###  Special Template Questions and Planner Logic

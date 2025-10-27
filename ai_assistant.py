@@ -40,6 +40,9 @@ def chat_one_round(messages_history: list[dict], question: str) -> Tuple[list[di
     '''
     return (messages_history, response)
     '''
+    # Reset cypher queries for new human query
+    reset_cypher_queries()
+    
     question = question.strip()
     if (question == ''):
         question = '<empty>'
@@ -50,6 +53,16 @@ def chat_one_round(messages_history: list[dict], question: str) -> Tuple[list[di
     while True:
         messages, response = chat_and_get_formatted(messages)
         if (response['to'] == 'user'):
+            # Before returning to user, call FormatAgent to process cypher queries
+            cypher_queries = get_all_cypher_queries()
+            if cypher_queries:
+                # Extract the original question from the first message
+                original_question = question.replace('====== From User ======\n', '')
+                format_input = f"Human Query: {original_question}\n\nCypher Queries: {json.dumps(cypher_queries)}\n\nFinal Answer: {json.dumps(response['text'])}"
+                format_result = format_agent_chat_one_round(format_input, 1)
+                
+                # Replace the response text with FormatAgent's formatted output
+                response['text'] = format_result
             return (messages, response['text'])
         if (function_call_num == MAX_ITER):
             assert (False)  # Currently not handle this error
@@ -87,4 +100,7 @@ def chat_forever():
 
 
 if __name__ == "__main__":
+    with open("log.txt", "w") as f:
+        pass
+
     chat_forever()

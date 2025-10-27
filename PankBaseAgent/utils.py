@@ -124,6 +124,10 @@ def _pankbase_api_query(input: str, q: Queue) -> None:
 
         print(f"DEBUG: Sending Cypher query: {cleaned_cypher}")
         
+        
+        with open('log.txt', 'a', ) as log_file:
+            log_file.write(f"{input}\n{cleaned_cypher}\n##########################\n")
+            
         response = requests.post(
             'HTTPS://vcr7lwcrnh.execute-api.us-east-1.amazonaws.com/development/api',
             headers={'Content-Type': 'application/json'},

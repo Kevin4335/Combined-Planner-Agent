@@ -51,16 +51,14 @@ Function signature: def pankbase_api_query(text: str) -> dict:
 
 You can do multiple function callings before responding to user. Your response messages have 2 types: to system, or to user. If it is to system, will do function calling. But there is a limit (MAX_ITER) on the continuous times of function calling, if you reach this limit, you must return to user.
 
-You can call multiple functions at a time, these functions will run in parallel.
-
 When a function calling is finished, you will see its result. You can decide what to do next (return to user, or do another function calling) based on this result.
 
-Currently MAX_ITER is set to 5.
+Currently MAX_ITER is set to 3.
 
 Here is the pseudo code:
 
 ```python
-MAX_ITER = 5
+MAX_ITER = 3
 messages = []
 model = <the_ai_assistant>  # This is you
 

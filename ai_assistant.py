@@ -5,7 +5,7 @@ from copy import deepcopy
 import json
 
 
-MAX_ITER = 5
+MAX_ITER = 2
 PRINT_FUNC_CALL = True
 PRINT_FUNC_RESULT = True
 set_log_enable(True)
@@ -13,7 +13,7 @@ set_log_enable(True)
 
 # pseudo code:
 
-# MAX_ITER = 5
+# MAX_ITER = 2
 # messages = []
 # model = <the_ai_assistant>  # This is you
 #
@@ -63,6 +63,7 @@ def chat_one_round(messages_history: list[dict], question: str) -> Tuple[list[di
                 
                 # Replace the response text with FormatAgent's formatted output
                 response['text'] = format_result
+                print(cypher_queries)
             return (messages, response['text'])
         if (function_call_num == MAX_ITER):
             assert (False)  # Currently not handle this error
@@ -83,7 +84,7 @@ def chat_one_round(messages_history: list[dict], question: str) -> Tuple[list[di
             print('\033[0m', end='')
         new_message = '====== From System ======\nThe results of function callings:\n' + functions_result + '\n'
         if (function_call_num == MAX_ITER):
-            new_message += 'You already called functions 5 continuous times. Next message you must return to user.'
+            new_message += 'You already called functions 2 continuous times. Next message you must return to user.'
         else:
             func_num = MAX_ITER - function_call_num
             new_message += f'You can call functions {func_num} more times, after this you need to return to user.'

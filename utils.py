@@ -201,9 +201,8 @@ def _pankbase_chat_one_round(input: str, q: Queue) -> None:
 
 		if match:
 			cypher_query = match.group(0).strip()
-			print(cypher_query)
 			# Add cypher query to global list
-			add_cypher_query(cypher_query)
+			
 		else:
 			print("nomatch")
 			cypher_query = ''

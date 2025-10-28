@@ -11,6 +11,7 @@ from langchain_community.vectorstores import Neo4jVector
 from langchain_huggingface import HuggingFaceEmbeddings
 from neo4j import GraphDatabase
 import os 
+from utils import add_cypher_query
 
 embedding_function = HuggingFaceEmbeddings(
     model_name='Alibaba-NLP/gte-large-en-v1.5',
@@ -127,7 +128,8 @@ def _pankbase_api_query(input: str, q: Queue) -> None:
         
         with open('log.txt', 'a', ) as log_file:
             log_file.write(f"{input}\n{cleaned_cypher}\n##########################\n")
-            
+        
+        add_cypher_query(cleaned_cypher)
         response = requests.post(
             'HTTPS://vcr7lwcrnh.execute-api.us-east-1.amazonaws.com/development/api',
             headers={'Content-Type': 'application/json'},

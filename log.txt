@@ -1,9 +1,0 @@
-Find information about the gene CFTR.
-MATCH (g:gene {name: "CFTR"}) WITH collect(DISTINCT g) AS nodes, [] AS edges RETURN nodes, edges;
-##########################
-Find gene information for INS.
-MATCH (g:gene) WHERE g.name = "INS" WITH collect(DISTINCT g) AS nodes, [] AS edges RETURN nodes, edges;
-##########################
-Find genes associated with Type 1 Diabetes.
-MATCH (g:gene)-[r:effector_gene]->(o:ontology) WHERE o.name CONTAINS "Type 1 Diabetes" WITH collect(DISTINCT g) + collect(DISTINCT o) AS nodes, collect(DISTINCT r) AS edges RETURN nodes, edges;
-##########################

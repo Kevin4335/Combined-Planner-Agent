@@ -1,60 +1,57 @@
 import json
+import os
+import sys
+import time
 import traceback
-from typing import Tuple
 from _thread import start_new_thread
 from queue import Queue
-from cypher_agent import generate_cypher_query, run_cypher
-import time
-from random import randint
-import sys
+
 import requests
-from langchain_community.vectorstores import Neo4jVector
-from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from neo4j import GraphDatabase
+
+from cypher_agent import generate_cypher_query, run_cypher
 
 GLKB_CONNECTION_URL = "bolt://141.213.137.207:7687"
 GLKB_USERNAME = 'neo4j'
 GLKB_PASSWORD = 'password'
 
-embedding_function = SentenceTransformerEmbeddings(model_name='Alibaba-NLP/gte-large-en-v1.5', mmodel_kwargs={'trust_remote_code': True,
-                  'device':'cpu'}) # device_map="auto"
-retrieval_query = """
-                RETURN node {.pubmedid, .title, .abstract} AS text, score, {} AS metadata
-                """
-abstract_store = Neo4jVector.from_existing_index(
-    embedding_function,
-    url=GLKB_CONNECTION_URL,
-    username="neo4j",
-    password="password",
-    index_name='abstract_vector',
-    # keyword_index_name='article_Title',
-    # search_type="hybrid",
-    retrieval_query=retrieval_query,
+HIRN_ABSTRACT_SEARCH_URL = os.getenv(
+    "HIRN_ABSTRACT_SEARCH_URL",
+    "https://nzi5e9mb0f.execute-api.us-east-1.amazonaws.com/production/pank3-ai-summary/search_hirn_abstracts",
 )
-
-
-def process_document(content: str, metadata: dict = None) -> dict:
-    result = {
-        'abstract': None,
-        'title': None,
-        'pubmedid': None,
-        'score': metadata.get('score', 0) if metadata else 0
-    }
-    lines = content.split('\n')
-    for line in lines:
-        if line.startswith('abstract: '):
-            result['abstract'] = line.replace('abstract: ', '', 1)
-        elif line.startswith('title: '):
-            result['title'] = line.replace('title: ', '', 1)
-        elif line.startswith('pubmedid: '):
-            result['pubmedid'] = line.replace('pubmedid: ', '', 1)
-            
-    return result
+HIRN_REQUEST_TIMEOUT_SECONDS = int(os.getenv("HIRN_REQUEST_TIMEOUT_SECONDS", "30"))
 
 
 def semantic_search(query: str, limit: int = 10) -> list:
-    results = abstract_store.similarity_search(query, k=limit)
-    results = [process_document(result.page_content, result.metadata) for result in results]
+    params = {"query": query, "k": limit}
+    try:
+        response = requests.get(
+            HIRN_ABSTRACT_SEARCH_URL, params=params, timeout=HIRN_REQUEST_TIMEOUT_SECONDS
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Failed to query HIRN abstracts API: {exc}") from exc
+
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise RuntimeError("Failed to decode HIRN abstracts API response as JSON") from exc
+
+    if not isinstance(payload, list):
+        raise RuntimeError("Unexpected payload type returned by HIRN abstracts API")
+
+    results = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        results.append(
+            {
+                "abstract": item.get("abstract"),
+                "title": item.get("title"),
+                "pubmedid": item.get("pmid"),
+                "score": item.get("score", 0),
+            }
+        )
     return results
 
 driver_2 = GraphDatabase.driver(

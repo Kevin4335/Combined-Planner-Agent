@@ -1,10 +1,13 @@
-from cypher_agent import generate_cypher_query, run_cypher
-import requests
 import json
-from ai_assistant import chat_one_round
-from _thread import start_new_thread
 import time
+from _thread import start_new_thread
+
+import requests
+
+from ai_assistant import chat_one_round
+from cypher_agent import generate_cypher_query, run_cypher
 from multi_thread_workers import map_infinite_retry
+from utils import HIRN_ABSTRACT_SEARCH_URL
 
 data = json.loads(open('/Users/jtc/Desktop/文件/UMich/WI2025/bio-lab/glkb_dataset/first_100_grok_thinking_less_relationship_by_grok_20250416.json').read())
 num = len(data)
@@ -18,15 +21,12 @@ def test_cypher():
 
 
 def test_embedding():
-    base_url = 'https://glkb.dcmb.med.umich.edu/api/search/rag'
-    data = {
+    params = {
         "query": "gene TOP2A functions and mechanisms",
-        "level": "abstract",
-        "limit": "5",
-        "curated_rels": "False",
-        "return_graph": "False"
+        "k": 5,
     }
-    res = requests.post(base_url, json=data)
+    res = requests.get(HIRN_ABSTRACT_SEARCH_URL, params=params)
+    res.raise_for_status()
     res = res.json()
     print(json.dumps(res, indent=2, ensure_ascii=False))
 

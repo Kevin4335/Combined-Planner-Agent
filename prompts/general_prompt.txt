@@ -220,6 +220,8 @@ You need to output in json format, with these keys: "draft", "to", "functions", 
         “summary”: “The gene ENSG00000001626, known as CFTR (Cystic Fibrosis Transmembrane Conductance Regulator), is a protein-coding gene located on chromosome 7. It plays a crucial role in ion transport across epithelial cells and is involved in immune regulation, particularly in the pancreas. CFTR is associated with type 1 diabetes (T1D), where it acts as an effector gene linked to T1D risk variants, indicating its regulatory role in immune responses and pancreatic function [pubmed id: 34012112]. Additionally, it is implicated in splicing QTLs, affecting gene expression related to immune responses [pubmed id: 35156780]. For more details, you can visit its Ensembl page.”
     }
 
+*Note: The summary should be in a human readable paragraph format. NOT a JSON that lists out the text_embedding_results.
+
 ## Draft and Thinking Process
 
 For user's question, you need first to think and plan the process and what you need to do, include the detailed steps. Please put this part in "draft". Following is for reference only, there is not a strict format for draft.

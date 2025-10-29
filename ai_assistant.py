@@ -35,7 +35,6 @@ set_log_enable(True)
 #             function_results = run_functions(functions_list)
 #             messages.append({"role": "user", "content": function_results})
 
-
 def chat_one_round(messages_history: list[dict], question: str) -> Tuple[list[dict], str]:
     '''
     return (messages_history, response)
@@ -55,16 +54,17 @@ def chat_one_round(messages_history: list[dict], question: str) -> Tuple[list[di
         if (response['to'] == 'user'):
             # Before returning to user, call FormatAgent to process cypher queries
             cypher_queries = get_all_cypher_queries()
-            if cypher_queries:
-                # Extract the original question from the first message
-                original_question = question.replace('====== From User ======\n', '')
-                format_input = f"Human Query: {original_question}\n\nCypher Queries: {json.dumps(cypher_queries)}\n\nFinal Answer: {json.dumps(response['text'])}"
-                format_result = format_agent_chat_one_round(format_input, 1)
-                
-                # Replace the response text with FormatAgent's formatted output
-                response['text'] = format_result
-                print(cypher_queries)
-            return (messages, response['text'])
+            
+            # Extract the original question from the first message
+            print("####")
+            print(json.dumps(response['text']))
+            print("###")
+            original_question = question.replace('====== From User ======\n', '')
+            format_input = f"Human Query: {original_question}\n\nCypher Queries: {json.dumps(cypher_queries)}\n\nFinal Answer: {json.dumps(response['text'])}"
+            format_result = format_agent(format_input)
+            
+            print(cypher_queries)
+            return (messages, format_result)
         if (function_call_num == MAX_ITER):
             assert (False)  # Currently not handle this error
         function_call_num += 1

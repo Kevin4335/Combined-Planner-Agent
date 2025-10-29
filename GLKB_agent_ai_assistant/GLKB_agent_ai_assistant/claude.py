@@ -77,7 +77,7 @@ def check_json(response: str) -> Tuple[bool, dict]:
                 assert (type(function['name']) == str)
                 assert ('input' in function)
                 assert (type(function['input']) == str)
-                assert (function['name'] in ('text_embedding', 'cypher_query', 'keyword_search'))
+                assert (function['name'] in ('text_embedding'))
         return (True, response)
     except:
         err_msg = traceback.format_exc()

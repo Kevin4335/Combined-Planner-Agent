@@ -69,7 +69,7 @@ def run_cypher_2(command: str, parameters = None, timeout: int = 60):
 
 
 
-__all__ = ['run_functions', 'reset_cypher_queries', 'add_cypher_query', 'get_all_cypher_queries', 'format_agent_chat_one_round']
+__all__ = ['run_functions', 'reset_cypher_queries', 'add_cypher_query', 'get_all_cypher_queries']
 
 
 def run_functions(functions: list[dict]) -> str:
@@ -257,41 +257,3 @@ def _glkb_chat_one_round(input: str, q: Queue) -> None:
 			err_msg = first + '  ... Middle part hidden due to length limit ...  ' + second
 		q.put((False, err_msg))
 
-def format_agent_chat_one_round(input: str, index: int) -> str:
-	q = Queue()
-	start_new_thread(_format_agent_chat_one_round, (input, q))
-	start = time.time()
-	while (time.time() - start < 100):
-		time.sleep(0.2)
-		if (q.qsize() == 1):
-			break
-	size = q.qsize()
-	result = f'{index}. FormatAgent chat_one_round: {str([input])[1:-1]}\n'
-	if (size == 0):
-		result += 'Status: timeout\n'
-		result += 'Error: Cannot get response from FormatAgent in 100 seconds\n\n'
-		return result
-	success, res = q.get(block=False)
-	if (success == False):
-		result += 'Status: error\n'
-		result += f'Error: {str([res])[1:-1]}\n\n'
-		return result
-	result += 'Status: success\n'
-	#res = res[:15000]
-	result += f'Result: {res}\n\n'
-	return res
-
-def _format_agent_chat_one_round(input: str, q: Queue) -> None:
-	try:
-		sys.path.append('FormatAgent')
-		from FormatAgent.ai_assistant import chat_one_round_format as format_chat
-		_, text = format_chat([], input)
-		q.put((True, text))
-	except Exception:
-		err_msg = traceback.format_exc()
-		print(err_msg, file=sys.stderr)
-		if (len(err_msg) > 2000):
-			first = err_msg[:1000]
-			second = err_msg[-1000:]
-			err_msg = first + '  ... Middle part hidden due to length limit ...  ' + second
-		q.put((False, err_msg))

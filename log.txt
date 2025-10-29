@@ -1,3 +1,3 @@
-Find gene information for CFTR.
+Find information about the gene CFTR, including its Ensembl ID.
 MATCH (g:gene {name: "CFTR"}) WITH collect(DISTINCT g) AS nodes, [] AS edges RETURN nodes, edges;
 ##########################

@@ -68,7 +68,7 @@ def chat_one_round_glkb(messages_history: list[dict], question: str) -> Tuple[li
             print('\033[0m', end='')
         new_message = '====== From System ======\nThe results of function callings:\n' + functions_result + '\n'
         if (function_call_num == MAX_ITER):
-            new_message += 'You already called functions 5 continuous times. Next message you must return to user.'
+            new_message += 'You already called functions 1 continuous times. Next message you must return to user.'
         else:
             func_num = MAX_ITER - function_call_num
             new_message += f'You can call functions {func_num} more times, after this you need to return to user.'

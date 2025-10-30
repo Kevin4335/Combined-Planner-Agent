@@ -26,7 +26,7 @@ Ensure the output strictly follows JSON syntax. Always add pubmed sources and id
 3. **Template_Tool**  
    - A rule-based agent designed to handle **four specific templates** involving SNP–QTL–gene relationships and gene expression patterns.  
    - It produces fixed-format triples like `snp - QTL - gene@ENSG00000001626`.  
-   - It cannot interpret free-text biological names — you must resolve identifiers (e.g., Ensembl IDs or rsIDs) **before calling** this agent.
+   - It will interpret free-text biological names — you can send to this agent free-text names or ensemble ids. The output will be in ensemble id format.
 
 ---
 
@@ -38,46 +38,22 @@ If a user query matches or paraphrases one of these, follow the exact decision f
 ####  Template Type 1
 **Pattern:** “Which SNP serves as the lead QTL for {@gene_symbol@}?”  
 **Expected Output:** `snp - QTL - gene@<ensembl_id>`  
-
-**Planner Logic:**
-- If `{@gene_symbol@}` is a plain name (e.g. *CFTR*), first query **PankBaseAgent** to get the Ensembl gene ID.
-- Substitute the ID into the template → `gene@ENSG...`
-- Then call **Template_Tool** with the resolved template question.
-- Optionally query **GLKB_agent** for supporting literature if the user asks for functional or mechanistic context.
-
 ---
 
 ####  Template Type 2
 **Pattern:** “Does {SNP @snp@} serve as a QTL for {@gene_symbol@}?”  
 **Expected Output:** `snp@<rsID> - QTL - gene@<ensembl_id>`  
-
-**Planner Logic:**
-- Check if SNP (`rs...`) and gene (`symbol`) have full identifiers.  
-- If missing:
-  - Use **PankBaseAgent** to retrieve missing IDs.  
-- Then call **Template_Tool**.
-
 ---
 
 ####  Template Type 3
 **Pattern:** “Which gene is regulated by {SNP @snp@} as a QTL?”  
 **Expected Output:** `snp@<rsID> - QTL - gene`  
 
-**Planner Logic:**
-- If SNP ID not resolved (e.g., user just says “the variant near CFTR”), query **PankBaseAgent** to get rsID.  
-- Then call **Template_Tool**.  
-- Optionally use **GLKB_agent** to summarize which genes are affected in literature context.
-
 ---
 
 ####  Template Type 4
 **Pattern:** “How does {@gene_symbol@} expression change in T1D versus non-diabetic samples?”  
 **Expected Output:** `gene@<ensembl_id> - express_in - cell_type`  
-
-**Planner Logic:**
-- Resolve gene symbol → Ensembl ID via **PankBaseAgent**.  
-- Then call **Template_Tool** to retrieve expression comparison relationships.  
-- Optionally use **GLKB_agent** to find literature describing expression differences.
 
 ---
 

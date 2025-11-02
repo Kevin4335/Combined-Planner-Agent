@@ -1,4 +1,5 @@
 import anthropic
+import config
 import os
 from copy import deepcopy
 from typing import Tuple
@@ -7,7 +8,6 @@ import traceback
 from threading import Lock
 from openai import OpenAI
 import sys
-from config import API_KEY
 
 file_path = os.path.abspath(__file__)
 file_path = os.path.dirname(file_path) + '/'
@@ -15,35 +15,15 @@ file_path = os.path.dirname(file_path) + '/'
 prompt = open(file_path + 'prompts/general_prompt.txt').read()
 # json_prompt = open(file_path + 'prompts/json_prompt.txt').read()
 error_prompt = open(file_path + 'prompts/error_prompt.txt').read()
-format_prompt = open(file_path + 'prompts/format_prompt.txt').read()
 
-# Trim whitespace/newlines from API key to avoid invalid Authorization header
-_OPENAI_API_KEY = API_KEY.strip() if isinstance(API_KEY, str) else API_KEY
-client = OpenAI(api_key=_OPENAI_API_KEY)
+client = OpenAI(api_key=config.OPENAI_API_KEY)
 
-__all__ = ['chat_and_get_formatted', 'set_log_enable', 'format_agent']
+__all__ = ['chat_and_get_formatted', 'set_log_enable']
 
 
 LOG_ENABLE = False
 log_file = open(file_path + 'logs/claude_log.txt', 'a')
 log_file_lock = Lock()
-
-def format_agent(user_input: str) -> str:
-
-    response = client.chat.completions.create(
-        model="gpt-4o-2024-11-20",
-        messages=[
-            {"role": "system", "content": format_prompt},
-            {"role": "user", "content": user_input}
-        ],
-        temperature=0.6,
-        max_tokens=4000,
-        top_p=1.0,
-        response_format={'type': 'json_object'}
-    )
-
-    return response.choices[0].message.content
-    #return 'test'
 
 
 def set_log_enable(enable: bool):
@@ -87,8 +67,7 @@ def check_json(response: str) -> Tuple[bool, dict]:
         assert ('draft' in response)
         assert (response['to'] in ('system', 'user'))
         if (response['to'] == 'user'):
-            # assert (type(response['text']) == dict)
-            pass
+            assert (type(response['text']) == str)
         else:
             assert (type(response['functions'] == list))
             assert (len(response['functions']) > 0)
@@ -98,7 +77,7 @@ def check_json(response: str) -> Tuple[bool, dict]:
                 assert (type(function['name']) == str)
                 assert ('input' in function)
                 assert (type(function['input']) == str)
-                assert (function['name'] in ('pankbase_chat_one_round', 'glkb_chat_one_round', 'template_chat_one_round')) #Function Names here
+                assert (function['name'] in ('text_embedding'))
         return (True, response)
     except:
         err_msg = traceback.format_exc()
@@ -112,7 +91,7 @@ def chat_and_get_formatted(messages: list) -> Tuple[list, dict]:
 
     messages don't include system message
     '''
-    trials = 3
+    trials = 1
     messages = deepcopy(messages)
     messages.insert(0, {"role": "system", "content": prompt})
     valid = False
